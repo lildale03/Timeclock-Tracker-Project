@@ -1,717 +1,1053 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Time Clock Tracker</title>
-  <link rel="icon" type="image/x-icon" href="timeclock.ico">
-  <style>
-    :root{
-      --bg:#ffffff;
-      --surface:#fafafa;
-      --surface-2:#f2f2f2;
-      --text:#111111;
-      --muted:#666666;
-      --grid:#cfcfcf;
-      --accent:#d9e2f3;
-      --good:#d9ead3;
-      --bad:#f4cccc;
-      --button:#f3f3f3;
-      --button-border:#999999;
-      --input-bg:#ffffff;
-    }
-    body.dark{
-      --bg:#0b1020;
-      --surface:#111827;
-      --surface-2:#0f172a;
-      --text:#e5e7eb;
-      --muted:#9ca3af;
-      --grid:#334155;
-      --accent:#1e3a5f;
-      --good:#153822;
-      --bad:#4a1f1f;
-      --button:#1f2937;
-      --button-border:#475569;
-      --input-bg:#0b1220;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      padding:20px;
-      background:var(--bg);
-      color:var(--text);
-      font-family:Calibri, Arial, sans-serif;
-      transition:background .25s, color .25s;
-    }
-    .wrap{max-width:1800px;margin:0 auto;width:100%}
-    h1{margin:0 0 6px 0;font-size:28px}
-    .sub{color:var(--muted);margin-bottom:16px}
-    .topbar{
-      display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px;
-    }
-    .field{display:flex;flex-direction:column;gap:4px}
-    .field label{font-size:12px;color:var(--muted)}
-    input[type="date"], input[type="text"], input[type="time"], input[type="file"]{
-      border:1px solid var(--grid);
-      background:var(--input-bg);
-      color:var(--text);
-      padding:6px 7px;
-      border-radius:2px;
-      min-width:90px;
-      font:inherit;
-      width:100%;
-      max-width:100%;
-    }
-    input[type="checkbox"]{width:18px;height:18px;accent-color:#4f86ff}
-    button{
-      border:1px solid var(--button-border);
-      background:var(--button);
-      color:var(--text);
-      padding:8px 12px;
-      border-radius:2px;
-      cursor:pointer;
-      font:inherit;
-    }
-    .desktop-table-wrap{
-      overflow-x:auto;
-      -webkit-overflow-scrolling:touch;
-      width:100%;
-      opacity:1;
-      transform:translateY(0);
-      transition:opacity .22s ease, transform .22s ease;
-    }
-    table{
-      width:100%;
-      border-collapse:collapse;
-      table-layout:auto;
-      background:var(--surface);
-    }
-    th, td{
-      border:1px solid var(--grid);
-      padding:6px 8px;
-      vertical-align:middle;
-      text-align:center;
-      height:40px;
-      font-size:14px;
-      min-width:70px;
-    }
-    th{background:var(--surface-2);font-weight:700;white-space:nowrap}
-    td.day{font-weight:700;text-align:left;width:120px}
-    td.date{width:110px}
-    td.total-label{font-weight:700;text-align:right;background:var(--surface)}
-    .time-cell{min-width:125px}
-    .date-cell{min-width:90px}
-    .checkbox-cell{min-width:55px}
-    td.input-cell{padding:6px}
-    td.input-cell input[type="time"]{min-width:0}
-    .worked-good{background:var(--good)}
-    .worked-bad{background:var(--bad)}
-    .friday-cell{background:var(--accent);font-weight:700}
-    .summary{
-      margin-top:14px;
-      display:grid;
-      grid-template-columns:repeat(4, minmax(180px, 1fr));
-      gap:10px;
-    }
-    .card{
-      border:1px solid var(--grid);
-      background:var(--surface);
-      padding:10px 12px;
-    }
-    .card .label,.mobile-summary-item .label{font-size:12px;color:var(--muted);margin-bottom:4px}
-    .card .value,.mobile-summary-item .value{font-size:22px;font-weight:700}
-    .note{margin-top:12px;color:var(--muted);font-size:13px;line-height:1.4}
-
-    .mobile-days{
-      display:none;
-      gap:14px;
-      margin-top:6px;
-      opacity:0;
-      transform:translateY(8px);
-      transition:opacity .22s ease, transform .22s ease;
-    }
-    .day-card{
-      border:1px solid var(--grid);
-      background:var(--surface);
-      padding:12px;
-    }
-    .day-card-header{
-      display:flex;justify-content:space-between;align-items:center;gap:12px;
-      margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--grid);
-    }
-    .day-card-title{font-weight:700;font-size:18px}
-    .day-card-date{color:var(--muted);font-size:14px}
-    .day-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
-    .mobile-field{display:flex;flex-direction:column;gap:4px}
-    .mobile-field label{font-size:12px;color:var(--muted)}
-    .mobile-readout,.mobile-check{
-      min-height:38px;display:flex;align-items:center;border:1px solid var(--grid);
-      background:var(--surface-2);padding:6px 7px;
-    }
-    .mobile-readout{justify-content:center;text-align:center}
-    .mobile-check{justify-content:flex-start}
-    .mobile-summary{
-      display:none;
-      margin-top:14px;
-      border:1px solid var(--grid);
-      background:var(--surface);
-      padding:12px;
-      opacity:0;
-      transform:translateY(8px);
-      transition:opacity .22s ease, transform .22s ease;
-    }
-    .mobile-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .mobile-summary-item{border:1px solid var(--grid);background:var(--surface-2);padding:10px}
-
-    @media (max-width:1000px){
-      body{padding:10px}
-      .summary{grid-template-columns:repeat(2, minmax(180px, 1fr))}
-    }
-    @media (max-width:860px){
-      .desktop-table-wrap{display:none}
-      .mobile-days{display:grid}
-      .mobile-summary{display:block}
-      .summary{display:none}
-    }
-
-    body.responsive-mobile .desktop-table-wrap{
-      display:none;
-      opacity:0;
-      transform:translateY(-8px);
-    }
-
-    body.responsive-mobile .mobile-days{
-      display:grid;
-      opacity:1;
-      transform:translateY(0);
-    }
-
-    body.responsive-mobile .mobile-summary{
-      display:block;
-      opacity:1;
-      transform:translateY(0);
-    }
-
-    body.responsive-mobile .summary{
-      display:none;
-    }
-
-    @media (max-width:700px){
-      .day-grid,.mobile-summary-grid{grid-template-columns:1fr}
-      h1{font-size:24px}
-    }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <h1>Time Clock Tracker</h1>
-    <div class="sub">A Dakota Vincent Application</div>
-
-    <div class="topbar">
-      <div class="field">
-        <label for="weekStart">Week Start</label>
-        <input id="weekStart" type="date" />
-      </div>
-      <div class="field">
-        <label for="dailyGoal">Daily Goal</label>
-        <input id="dailyGoal" type="text" value="8:00" />
-      </div>
-      <div class="field">
-        <label for="skipGoal">Skip Lunch Goal</label>
-        <input id="skipGoal" type="text" value="7:30" />
-      </div>
-      <div class="field">
-        <label for="weeklyGoal">Weekly Goal</label>
-        <input id="weeklyGoal" type="text" value="40:00" />
-      </div>
-      <div class="field">
-        <label for="defaultLunch">Default Lunch</label>
-        <input id="defaultLunch" type="text" value="0:30" />
-      </div>
-      <div class="field">
-        <label for="defaultClockIn">Default Clock In</label>
-        <input id="defaultClockIn" type="time" value="06:45" />
-      </div>
-      <button id="setCurrentWeekBtn">Use Current Week</button>
-      <button id="themeToggle">🌙 Dark</button>
-      <button id="exportBtn">Export Week</button>
-      <div class="field">
-        <label for="importFile">Import Week</label>
-        <input id="importFile" type="file" accept=".json" />
-      </div>
-      <button id="resetBtn">Reset This Week</button>
-    </div>
-
-    <div class="desktop-table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:120px">Day</th>
-            <th class="date-cell" style="width:120px">Date</th>
-            <th class="time-cell">Clock In</th>
-            <th class="time-cell">Lunch Out</th>
-            <th class="time-cell">Lunch In</th>
-            <th class="checkbox-cell">Skip Lunch</th>
-            <th class="time-cell">Clock Out Time</th>
-            <th class="time-cell">Actual Clock Out Time</th>
-            <th>Time Worked</th>
-            <th>Time Missed</th>
-            <th>Friday Needed</th>
-            <th class="time-cell">Friday Clock Out</th>
-            <th class="checkbox-cell">PTO</th>
-          </tr>
-        </thead>
-        <tbody id="timeRows"></tbody>
-        <tfoot>
-          <tr>
-            <td colspan="8" class="total-label">Totals</td>
-            <td id="totalWorked" style="font-weight:700">0:00</td>
-            <td id="totalMissed" style="font-weight:700">0:00</td>
-            <td colspan="3"></td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-
-    <div id="mobileDays" class="mobile-days"></div>
-
-    <div class="summary">
-      <div class="card"><div class="label">Week Worked</div><div class="value" id="sumWorked">0:00</div></div>
-      <div class="card"><div class="label">Week Goal</div><div class="value" id="sumGoal">40:00</div></div>
-      <div class="card"><div class="label">Week Variance</div><div class="value" id="sumVariance">0:00</div></div>
-      <div class="card"><div class="label">Worked %</div><div class="value" id="sumPercent">0.0%</div></div>
-    </div>
-
-    <div class="mobile-summary">
-      <div class="mobile-summary-grid">
-        <div class="mobile-summary-item"><div class="label">Week Worked</div><div class="value" id="mobileSumWorked">0:00</div></div>
-        <div class="mobile-summary-item"><div class="label">Week Goal</div><div class="value" id="mobileSumGoal">40:00</div></div>
-        <div class="mobile-summary-item"><div class="label">Week Variance</div><div class="value" id="mobileSumVariance">0:00</div></div>
-        <div class="mobile-summary-item"><div class="label">Worked %</div><div class="value" id="mobileSumPercent">0.0%</div></div>
-      </div>
-    </div>
-
-    <div class="note">
-      <strong>Clock Out Time</strong> is the daily suggested time to hit that day’s target exactly.
-      <strong>Friday Clock Out</strong> uses the remaining time needed to hit the full weekly goal after Monday–Thursday.
-      Export saves a JSON backup. Import restores a saved week. 
-    </div>
-  </div>
-
-  <script>
-    const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-    const STORAGE_PREFIX = "timeclock_tracker_v4_sheet";
-
-    const els = {
-      weekStart: document.getElementById("weekStart"),
-      dailyGoal: document.getElementById("dailyGoal"),
-      skipGoal: document.getElementById("skipGoal"),
-      weeklyGoal: document.getElementById("weeklyGoal"),
-      defaultLunch: document.getElementById("defaultLunch"),
-      defaultClockIn: document.getElementById("defaultClockIn"),
-      timeRows: document.getElementById("timeRows"),
-      mobileDays: document.getElementById("mobileDays"),
-      totalWorked: document.getElementById("totalWorked"),
-      totalMissed: document.getElementById("totalMissed"),
-      setCurrentWeekBtn: document.getElementById("setCurrentWeekBtn"),
-      themeToggle: document.getElementById("themeToggle"),
-      exportBtn: document.getElementById("exportBtn"),
-      importFile: document.getElementById("importFile"),
-      resetBtn: document.getElementById("resetBtn"),
-      sumWorked: document.getElementById("sumWorked"),
-      sumGoal: document.getElementById("sumGoal"),
-      sumVariance: document.getElementById("sumVariance"),
-      sumPercent: document.getElementById("sumPercent"),
-      mobileSumWorked: document.getElementById("mobileSumWorked"),
-      mobileSumGoal: document.getElementById("mobileSumGoal"),
-      mobileSumVariance: document.getElementById("mobileSumVariance"),
-      mobileSumPercent: document.getElementById("mobileSumPercent")
-    };
-
-    const pad = n => String(n).padStart(2, "0");
-    const todayLocalDateString = (date = new Date()) => `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
-
-    function getMonday(date = new Date()){
-      const d = new Date(date);
-      const day = d.getDay();
-      const diff = day === 0 ? -6 : 1 - day;
-      d.setDate(d.getDate() + diff);
-      return d;
-    }
-    function addDays(dateString, days){
-      const d = new Date(dateString + "T00:00:00");
-      d.setDate(d.getDate() + days);
-      return todayLocalDateString(d);
-    }
-    function formatDisplayDate(dateString){
-      const d = new Date(dateString + "T00:00:00");
-      return d.toLocaleDateString(undefined, {month:"short", day:"numeric"});
-    }
-    function parseHHMM(text){
-      if(!text) return null;
-      const m = String(text).trim().match(/^(\d{1,3}):(\d{2})$/);
-      return m ? parseInt(m[1],10)*60 + parseInt(m[2],10) : null;
-    }
-    function formatMinutes(mins){
-      if(mins == null || Number.isNaN(mins)) return "—";
-      const sign = mins < 0 ? "-" : "";
-      const abs = Math.abs(Math.round(mins));
-      return `${sign}${Math.floor(abs/60)}:${pad(abs%60)}`;
-    }
-    function formatMissed(mins){
-      if(mins == null || Number.isNaN(mins)) return "—";
-      return mins <= 0 ? "0:00" : formatMinutes(mins);
-    }
-    function timeToMinutes(t){
-      if(!t) return null;
-      const [h,m] = t.split(":").map(Number);
-      return Number.isNaN(h) || Number.isNaN(m) ? null : h*60+m;
-    }
-    function durationMinutes(start, end){
-      const s = timeToMinutes(start), e = timeToMinutes(end);
-      return s == null || e == null ? null : e - s;
-    }
-    function minutesToClock(minutes){
-      if(minutes == null) return "—";
-      const mins = ((minutes % 1440) + 1440) % 1440;
-      const h = Math.floor(mins/60), m = mins%60;
-      const suffix = h >= 12 ? "PM" : "AM";
-      const h12 = ((h + 11) % 12) + 1;
-      return `${h12}:${pad(m)} ${suffix}`;
-    }
-    function getStorageKey(weekStart){ return `${STORAGE_PREFIX}_${weekStart}`; }
-    function defaultRows(weekStart){
-      const defaultClockIn = (els.defaultClockIn && els.defaultClockIn.value) ? els.defaultClockIn.value : "";
-      return DAY_NAMES.map((day, idx) => ({
-        day,
-        date:addDays(weekStart, idx),
-        clockIn: defaultClockIn,
-        lunchOut:"",
-        lunchIn:"",
-        clockOut:"",
-        skipLunch:false,
-        pto:false
-      }));
-    }
-    function getState(){
-      const weekStart = els.weekStart.value;
-      const raw = localStorage.getItem(getStorageKey(weekStart));
-      const rows = raw ? JSON.parse(raw) : defaultRows(weekStart);
-      return { settings:{weekStart, dailyGoal:els.dailyGoal.value, skipGoal:els.skipGoal.value, weeklyGoal:els.weeklyGoal.value, defaultLunch:els.defaultLunch.value, defaultClockIn: els.defaultClockIn.value}, rows };
-    }
-    function saveState(rows){ localStorage.setItem(getStorageKey(els.weekStart.value), JSON.stringify(rows)); }
-    function updateDatesInRows(rows){
-      rows.forEach((row, idx) => { row.day = DAY_NAMES[idx]; row.date = addDays(els.weekStart.value, idx); });
-      return rows;
-    }
-    function ensureWeekExists(forceNew = false){
-      const key = getStorageKey(els.weekStart.value);
-      const existing = localStorage.getItem(key);
-      if(!existing || forceNew) localStorage.setItem(key, JSON.stringify(defaultRows(els.weekStart.value)));
-    }
-    function computeSimpleWorked(row){
-      if(row.pto) return 0;
-      const shift = durationMinutes(row.clockIn, row.clockOut);
-      if(shift == null) return 0;
-      let worked = shift;
-      if(!row.skipLunch){
-        const lunch = durationMinutes(row.lunchOut, row.lunchIn);
-        if(lunch != null) worked -= lunch;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Time Clock Tracker</title>
+    <link rel="icon" type="image/x-icon" href="timeclock.ico" />
+    <style>
+      :root {
+        --bg: #ffffff;
+        --surface: #fafafa;
+        --surface-2: #f2f2f2;
+        --text: #111111;
+        --muted: #666666;
+        --grid: #cfcfcf;
+        --accent: #d9e2f3;
+        --good: #d9ead3;
+        --bad: #f4cccc;
+        --button: #f3f3f3;
+        --button-border: #999999;
+        --input-bg: #ffffff;
       }
-      return worked;
-    }
-    function computeRow(row, idx, rows){
-      const dailyGoal = parseHHMM(els.dailyGoal.value) ?? 480;
-      const skipGoal = parseHHMM(els.skipGoal.value) ?? 450;
-      const weeklyGoal = parseHHMM(els.weeklyGoal.value) ?? 2400;
-      const defaultLunch = parseHHMM(els.defaultLunch.value) ?? 30;
+      body.dark {
+        --bg: #0b1020;
+        --surface: #111827;
+        --surface-2: #0f172a;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --grid: #334155;
+        --accent: #1e3a5f;
+        --good: #153822;
+        --bad: #4a1f1f;
+        --button: #1f2937;
+        --button-border: #475569;
+        --input-bg: #0b1220;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 20px;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Calibri, Arial, sans-serif;
+        transition:
+          background 0.25s,
+          color 0.25s;
+      }
+      .wrap {
+        max-width: 1800px;
+        margin: 0 auto;
+        width: 100%;
+      }
+      h1 {
+        margin: 0 0 6px 0;
+        font-size: 28px;
+      }
+      .sub {
+        color: var(--muted);
+        margin-bottom: 16px;
+      }
+      .topbar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: end;
+        margin-bottom: 14px;
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .field label {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      input[type="date"],
+      input[type="text"],
+      input[type="time"],
+      input[type="file"] {
+        border: 1px solid var(--grid);
+        background: var(--input-bg);
+        color: var(--text);
+        padding: 6px 7px;
+        border-radius: 2px;
+        min-width: 90px;
+        font: inherit;
+        width: 100%;
+        max-width: 100%;
+      }
+      input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #4f86ff;
+      }
+      button {
+        border: 1px solid var(--button-border);
+        background: var(--button);
+        color: var(--text);
+        padding: 8px 12px;
+        border-radius: 2px;
+        cursor: pointer;
+        font: inherit;
+      }
+      .desktop-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        opacity: 1;
+        transform: translateY(0);
+        transition:
+          opacity 0.22s ease,
+          transform 0.22s ease;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: auto;
+        background: var(--surface);
+      }
+      th,
+      td {
+        border: 1px solid var(--grid);
+        padding: 6px 8px;
+        vertical-align: middle;
+        text-align: center;
+        height: 40px;
+        font-size: 14px;
+        min-width: 70px;
+      }
+      th {
+        background: var(--surface-2);
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      td.day {
+        font-weight: 700;
+        text-align: left;
+        width: 120px;
+      }
+      td.date {
+        width: 110px;
+      }
+      td.total-label {
+        font-weight: 700;
+        text-align: right;
+        background: var(--surface);
+      }
+      .time-cell {
+        min-width: 125px;
+      }
+      .date-cell {
+        min-width: 90px;
+      }
+      .checkbox-cell {
+        min-width: 55px;
+      }
+      td.input-cell {
+        padding: 6px;
+      }
+      td.input-cell input[type="time"] {
+        min-width: 0;
+      }
+      .worked-good {
+        background: var(--good);
+      }
+      .worked-bad {
+        background: var(--bad);
+      }
+      .friday-cell {
+        background: var(--accent);
+        font-weight: 700;
+      }
+      .summary {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(180px, 1fr));
+        gap: 10px;
+      }
+      .card {
+        border: 1px solid var(--grid);
+        background: var(--surface);
+        padding: 10px 12px;
+      }
+      .card .label,
+      .mobile-summary-item .label {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .card .value,
+      .mobile-summary-item .value {
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .note {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.4;
+      }
 
-      let target = row.pto ? 0 : (row.skipLunch ? skipGoal : dailyGoal);
-      let worked = 0;
-      if(!row.pto){
-        const shift = durationMinutes(row.clockIn, row.clockOut);
-        if(shift != null){
-          worked = shift;
-          if(!row.skipLunch){
-            const lunch = durationMinutes(row.lunchOut, row.lunchIn);
-            if(lunch != null) worked -= lunch;
-          }
+      .mobile-days {
+        display: none;
+        gap: 14px;
+        margin-top: 6px;
+        opacity: 0;
+        transform: translateY(8px);
+        transition:
+          opacity 0.22s ease,
+          transform 0.22s ease;
+      }
+      .day-card {
+        border: 1px solid var(--grid);
+        background: var(--surface);
+        padding: 12px;
+      }
+      .day-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--grid);
+      }
+      .day-card-title {
+        font-weight: 700;
+        font-size: 18px;
+      }
+      .day-card-date {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .day-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 12px;
+      }
+      .mobile-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .mobile-field label {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .mobile-readout,
+      .mobile-check {
+        min-height: 38px;
+        display: flex;
+        align-items: center;
+        border: 1px solid var(--grid);
+        background: var(--surface-2);
+        padding: 6px 7px;
+      }
+      .mobile-readout {
+        justify-content: center;
+        text-align: center;
+      }
+      .mobile-check {
+        justify-content: flex-start;
+      }
+      .mobile-summary {
+        display: none;
+        margin-top: 14px;
+        border: 1px solid var(--grid);
+        background: var(--surface);
+        padding: 12px;
+        opacity: 0;
+        transform: translateY(8px);
+        transition:
+          opacity 0.22s ease,
+          transform 0.22s ease;
+      }
+      .mobile-summary-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .mobile-summary-item {
+        border: 1px solid var(--grid);
+        background: var(--surface-2);
+        padding: 10px;
+      }
+
+      @media (max-width: 1000px) {
+        body {
+          padding: 10px;
+        }
+        .summary {
+          grid-template-columns: repeat(2, minmax(180px, 1fr));
         }
       }
 
-      let lunchToAdd = 0;
-      if(!row.skipLunch && !row.pto){
-        const enteredLunch = durationMinutes(row.lunchOut, row.lunchIn);
-        lunchToAdd = enteredLunch != null ? enteredLunch : defaultLunch;
+      body.responsive-mobile .desktop-table-wrap {
+        display: none;
+        opacity: 0;
+        transform: translateY(-8px);
       }
 
-      const clockInMin = timeToMinutes(row.clockIn);
-      let dailySuggestedOut = null;
-      if(clockInMin != null && !row.pto) dailySuggestedOut = clockInMin + target + lunchToAdd;
-
-      let fridayNeeded = null;
-      let fridaySuggestedOut = null;
-      if(idx === 4){
-        const monThuWorked = rows.slice(0,4).reduce((sum, r) => sum + computeSimpleWorked(r), 0);
-        fridayNeeded = Math.max(0, weeklyGoal - monThuWorked);
-        if(clockInMin != null && !row.pto) fridaySuggestedOut = clockInMin + fridayNeeded + lunchToAdd;
+      body.responsive-mobile .mobile-days {
+        display: grid;
+        opacity: 1;
+        transform: translateY(0);
       }
 
-      const timeMissed = Math.max(0, target - worked);
-      return { target, worked, timeMissed, dailySuggestedOut, fridayNeeded, fridaySuggestedOut };
-    }
+      body.responsive-mobile .mobile-summary {
+        display: block;
+        opacity: 1;
+        transform: translateY(0);
+      }
 
-    function renderMobileCard(row, idx, c){
-      return `
-        <div class="day-card">
-          <div class="day-card-header">
-            <div class="day-card-title">${row.day}</div>
-            <div class="day-card-date">${formatDisplayDate(row.date)}</div>
+      body.responsive-mobile .summary {
+        display: none;
+      }
+
+      @media (max-width: 700px) {
+        .day-grid,
+        .mobile-summary-grid {
+          grid-template-columns: 1fr;
+        }
+        h1 {
+          font-size: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Time Clock Tracker</h1>
+      <div class="sub">A Dakota Vincent Application</div>
+
+      <div class="topbar">
+        <div class="field">
+          <label for="weekStart">Week Start</label>
+          <input id="weekStart" type="date" />
+        </div>
+        <div class="field">
+          <label for="dailyGoal">Daily Goal</label>
+          <input id="dailyGoal" type="text" value="8:00" />
+        </div>
+        <div class="field">
+          <label for="skipGoal">Skip Lunch Goal</label>
+          <input id="skipGoal" type="text" value="7:30" />
+        </div>
+        <div class="field">
+          <label for="weeklyGoal">Weekly Goal</label>
+          <input id="weeklyGoal" type="text" value="40:00" />
+        </div>
+        <div class="field">
+          <label for="defaultLunch">Default Lunch</label>
+          <input id="defaultLunch" type="text" value="0:30" />
+        </div>
+        <div class="field">
+          <label for="defaultClockIn">Default Clock In</label>
+          <input id="defaultClockIn" type="time" value="06:45" />
+        </div>
+        <button id="setCurrentWeekBtn">Use Current Week</button>
+        <button id="themeToggle">🌙 Dark</button>
+        <button id="exportBtn">Export Week</button>
+        <div class="field">
+          <label for="importFile">Import Week</label>
+          <input id="importFile" type="file" accept=".json" />
+        </div>
+        <button id="resetBtn">Reset This Week</button>
+      </div>
+
+      <div class="desktop-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 120px">Day</th>
+              <th class="date-cell" style="width: 120px">Date</th>
+              <th class="time-cell">Clock In</th>
+              <th class="time-cell">Lunch Out</th>
+              <th class="time-cell">Lunch In</th>
+              <th class="checkbox-cell">Skip Lunch</th>
+              <th class="time-cell">Clock Out Time</th>
+              <th class="time-cell">Actual Clock Out Time</th>
+              <th>Time Worked</th>
+              <th>Time Missed</th>
+              <th>Friday Needed</th>
+              <th class="time-cell">Friday Clock Out</th>
+              <th class="checkbox-cell">PTO</th>
+            </tr>
+          </thead>
+          <tbody id="timeRows"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="8" class="total-label">Totals</td>
+              <td id="totalWorked" style="font-weight: 700">0:00</td>
+              <td id="totalMissed" style="font-weight: 700">0:00</td>
+              <td colspan="3"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div id="mobileDays" class="mobile-days"></div>
+
+      <div class="summary">
+        <div class="card">
+          <div class="label">Week Worked</div>
+          <div class="value" id="sumWorked">0:00</div>
+        </div>
+        <div class="card">
+          <div class="label">Week Goal</div>
+          <div class="value" id="sumGoal">40:00</div>
+        </div>
+        <div class="card">
+          <div class="label">Week Variance</div>
+          <div class="value" id="sumVariance">0:00</div>
+        </div>
+        <div class="card">
+          <div class="label">Worked %</div>
+          <div class="value" id="sumPercent">0.0%</div>
+        </div>
+      </div>
+
+      <div class="mobile-summary">
+        <div class="mobile-summary-grid">
+          <div class="mobile-summary-item">
+            <div class="label">Week Worked</div>
+            <div class="value" id="mobileSumWorked">0:00</div>
           </div>
-          <div class="day-grid">
-            <div class="mobile-field">
-              <label>Clock In</label>
-              <input type="time" data-idx="${idx}" data-field="clockIn" value="${row.clockIn || ""}" ${row.pto ? "disabled" : ""}>
-            </div>
-            <div class="mobile-field">
-              <label>Lunch Out</label>
-              <input type="time" data-idx="${idx}" data-field="lunchOut" value="${row.lunchOut || ""}" ${(row.skipLunch || row.pto) ? "disabled" : ""}>
-            </div>
-            <div class="mobile-field">
-              <label>Lunch In</label>
-              <input type="time" data-idx="${idx}" data-field="lunchIn" value="${row.lunchIn || ""}" ${(row.skipLunch || row.pto) ? "disabled" : ""}>
-            </div>
-            <div class="mobile-field">
-              <label>Actual Clock Out</label>
-              <input type="time" data-idx="${idx}" data-field="clockOut" value="${row.clockOut || ""}" ${row.pto ? "disabled" : ""}>
-            </div>
-            <div class="mobile-field">
-              <label>Skip Lunch</label>
-              <div class="mobile-check"><input type="checkbox" data-idx="${idx}" data-field="skipLunch" ${row.skipLunch ? "checked" : ""} ${row.pto ? "disabled" : ""}></div>
-            </div>
-            <div class="mobile-field">
-              <label>PTO</label>
-              <div class="mobile-check"><input type="checkbox" data-idx="${idx}" data-field="pto" ${row.pto ? "checked" : ""}></div>
-            </div>
-            <div class="mobile-field">
-              <label>Clock Out Time</label>
-              <div class="mobile-readout">${minutesToClock(c.dailySuggestedOut)}</div>
-            </div>
-            <div class="mobile-field">
-              <label>Time Worked</label>
-              <div class="mobile-readout ${c.timeMissed === 0 && c.worked > 0 ? "worked-good" : (c.worked > 0 ? "worked-bad" : "")}">${formatMinutes(c.worked)}</div>
-            </div>
-            <div class="mobile-field">
-              <label>Time Missed</label>
-              <div class="mobile-readout ${c.timeMissed > 0 ? "worked-bad" : (c.worked > 0 ? "worked-good" : "")}">${formatMissed(c.timeMissed)}</div>
-            </div>
-            <div class="mobile-field">
-              <label>Friday Needed</label>
-              <div class="mobile-readout ${idx === 4 ? "friday-cell" : ""}">${idx === 4 ? formatMinutes(c.fridayNeeded) : "—"}</div>
-            </div>
-            <div class="mobile-field">
-              <label>Friday Clock Out</label>
-              <div class="mobile-readout ${idx === 4 ? "friday-cell" : ""}">${idx === 4 ? minutesToClock(c.fridaySuggestedOut) : "—"}</div>
-            </div>
+          <div class="mobile-summary-item">
+            <div class="label">Week Goal</div>
+            <div class="value" id="mobileSumGoal">40:00</div>
+          </div>
+          <div class="mobile-summary-item">
+            <div class="label">Week Variance</div>
+            <div class="value" id="mobileSumVariance">0:00</div>
+          </div>
+          <div class="mobile-summary-item">
+            <div class="label">Worked %</div>
+            <div class="value" id="mobileSumPercent">0.0%</div>
           </div>
         </div>
-      `;
-    }
+      </div>
 
-    function render(){
-      const state = getState();
-      const rows = updateDatesInRows(state.rows);
-      saveState(rows);
-      els.timeRows.innerHTML = "";
-      els.mobileDays.innerHTML = "";
+      <div class="note">
+        <strong>Clock Out Time</strong> is the daily suggested time to hit that
+        day’s target exactly. <strong>Friday Clock Out</strong> uses the
+        remaining time needed to hit the full weekly goal after Monday–Thursday.
+        Export saves a JSON backup. Import restores a saved week.
+      </div>
+    </div>
 
-      let weekWorked = 0;
-      let totalMissed = 0;
+    <script>
+           const DAY_NAMES = [
+             "Monday",
+             "Tuesday",
+             "Wednesday",
+             "Thursday",
+             "Friday",
+           ];
+           const STORAGE_PREFIX = "timeclock_tracker_v4_sheet";
 
-      rows.forEach((row, idx) => {
-        const c = computeRow(row, idx, rows);
-        weekWorked += c.worked;
-        totalMissed += c.timeMissed;
+           const els = {
+             weekStart: document.getElementById("weekStart"),
+             dailyGoal: document.getElementById("dailyGoal"),
+             skipGoal: document.getElementById("skipGoal"),
+             weeklyGoal: document.getElementById("weeklyGoal"),
+             defaultLunch: document.getElementById("defaultLunch"),
+             defaultClockIn: document.getElementById("defaultClockIn"),
+             timeRows: document.getElementById("timeRows"),
+             mobileDays: document.getElementById("mobileDays"),
+             totalWorked: document.getElementById("totalWorked"),
+             totalMissed: document.getElementById("totalMissed"),
+             setCurrentWeekBtn: document.getElementById("setCurrentWeekBtn"),
+             themeToggle: document.getElementById("themeToggle"),
+             exportBtn: document.getElementById("exportBtn"),
+             importFile: document.getElementById("importFile"),
+             resetBtn: document.getElementById("resetBtn"),
+             sumWorked: document.getElementById("sumWorked"),
+             sumGoal: document.getElementById("sumGoal"),
+             sumVariance: document.getElementById("sumVariance"),
+             sumPercent: document.getElementById("sumPercent"),
+             mobileSumWorked: document.getElementById("mobileSumWorked"),
+             mobileSumGoal: document.getElementById("mobileSumGoal"),
+             mobileSumVariance: document.getElementById("mobileSumVariance"),
+             mobileSumPercent: document.getElementById("mobileSumPercent"),
+           };
 
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td class="day">${row.day}</td>
-          <td class="date">${formatDisplayDate(row.date)}</td>
-          <td class="input-cell"><input type="time" data-idx="${idx}" data-field="clockIn" value="${row.clockIn || ""}" ${row.pto ? "disabled" : ""}></td>
-          <td class="input-cell"><input type="time" data-idx="${idx}" data-field="lunchOut" value="${row.lunchOut || ""}" ${(row.skipLunch || row.pto) ? "disabled" : ""}></td>
-          <td class="input-cell"><input type="time" data-idx="${idx}" data-field="lunchIn" value="${row.lunchIn || ""}" ${(row.skipLunch || row.pto) ? "disabled" : ""}></td>
-          <td class="checkbox-cell"><input type="checkbox" data-idx="${idx}" data-field="skipLunch" ${row.skipLunch ? "checked" : ""} ${row.pto ? "disabled" : ""}></td>
-          <td>${minutesToClock(c.dailySuggestedOut)}</td>
-          <td class="input-cell"><input type="time" data-idx="${idx}" data-field="clockOut" value="${row.clockOut || ""}" ${row.pto ? "disabled" : ""}></td>
-          <td class="${c.timeMissed === 0 && c.worked > 0 ? "worked-good" : (c.worked > 0 ? "worked-bad" : "")}">${formatMinutes(c.worked)}</td>
-          <td class="${c.timeMissed > 0 ? "worked-bad" : (c.worked > 0 ? "worked-good" : "")}">${formatMissed(c.timeMissed)}</td>
-          <td class="${idx === 4 ? "friday-cell" : ""}">${idx === 4 ? formatMinutes(c.fridayNeeded) : "—"}</td>
-          <td class="${idx === 4 ? "friday-cell" : ""}">${idx === 4 ? minutesToClock(c.fridaySuggestedOut) : "—"}</td>
-          <td class="checkbox-cell"><input type="checkbox" data-idx="${idx}" data-field="pto" ${row.pto ? "checked" : ""}></td>
-        `;
-        els.timeRows.appendChild(tr);
-        els.mobileDays.insertAdjacentHTML("beforeend", renderMobileCard(row, idx, c));
-      });
+           const pad = (n) => String(n).padStart(2, "0");
+           const todayLocalDateString = (date = new Date()) =>
+             `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 
-      const weeklyGoal = parseHHMM(els.weeklyGoal.value) ?? 2400;
-      const weekVariance = weekWorked - weeklyGoal;
-      const percent = weeklyGoal ? (weekWorked / weeklyGoal * 100) : 0;
+           function getMonday(date = new Date()) {
+             const d = new Date(date);
+             const day = d.getDay();
+             const diff = day === 0 ? -6 : 1 - day;
+             d.setDate(d.getDate() + diff);
+             return d;
+           }
+           function addDays(dateString, days) {
+             const d = new Date(dateString + "T00:00:00");
+             d.setDate(d.getDate() + days);
+             return todayLocalDateString(d);
+           }
+           function formatDisplayDate(dateString) {
+             const d = new Date(dateString + "T00:00:00");
+             return d.toLocaleDateString(undefined, {
+               month: "short",
+               day: "numeric",
+             });
+           }
+           function parseHHMM(text) {
+             if (!text) return null;
+             const m = String(text)
+               .trim()
+               .match(/^(\d{1,3}):(\d{2})$/);
+             return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : null;
+           }
+           function formatMinutes(mins) {
+             if (mins == null || Number.isNaN(mins)) return "—";
+             const sign = mins < 0 ? "-" : "";
+             const abs = Math.abs(Math.round(mins));
+             return `${sign}${Math.floor(abs / 60)}:${pad(abs % 60)}`;
+           }
+           function formatMissed(mins) {
+             if (mins == null || Number.isNaN(mins)) return "—";
+             return mins <= 0 ? "0:00" : formatMinutes(mins);
+           }
+           function timeToMinutes(t) {
+             if (!t) return null;
+             const [h, m] = t.split(":").map(Number);
+             return Number.isNaN(h) || Number.isNaN(m) ? null : h * 60 + m;
+           }
+           function durationMinutes(start, end) {
+             const s = timeToMinutes(start),
+               e = timeToMinutes(end);
+             return s == null || e == null ? null : e - s;
+           }
+           function minutesToClock(minutes) {
+             if (minutes == null) return "—";
+             const mins = ((minutes % 1440) + 1440) % 1440;
+             const h = Math.floor(mins / 60),
+               m = mins % 60;
+             const suffix = h >= 12 ? "PM" : "AM";
+             const h12 = ((h + 11) % 12) + 1;
+             return `${h12}:${pad(m)} ${suffix}`;
+           }
+           function getStorageKey(weekStart) {
+             return `${STORAGE_PREFIX}_${weekStart}`;
+           }
+           function defaultRows(weekStart) {
+             const defaultClockIn =
+               els.defaultClockIn && els.defaultClockIn.value
+                 ? els.defaultClockIn.value
+                 : "";
+             return DAY_NAMES.map((day, idx) => ({
+               day,
+               date: addDays(weekStart, idx),
+               clockIn: defaultClockIn,
+               lunchOut: "",
+               lunchIn: "",
+               clockOut: "",
+               skipLunch: false,
+               pto: false,
+             }));
+           }
+           function getState() {
+             const weekStart = els.weekStart.value;
+             const raw = localStorage.getItem(getStorageKey(weekStart));
+             const rows = raw ? JSON.parse(raw) : defaultRows(weekStart);
+             return {
+               settings: {
+                 weekStart,
+                 dailyGoal: els.dailyGoal.value,
+                 skipGoal: els.skipGoal.value,
+                 weeklyGoal: els.weeklyGoal.value,
+                 defaultLunch: els.defaultLunch.value,
+                 defaultClockIn: els.defaultClockIn.value,
+               },
+               rows,
+             };
+           }
+           function saveState(rows) {
+             localStorage.setItem(
+               getStorageKey(els.weekStart.value),
+               JSON.stringify(rows),
+             );
+           }
+           function updateDatesInRows(rows) {
+             rows.forEach((row, idx) => {
+               row.day = DAY_NAMES[idx];
+               row.date = addDays(els.weekStart.value, idx);
+             });
+             return rows;
+           }
+           function ensureWeekExists(forceNew = false) {
+             const key = getStorageKey(els.weekStart.value);
+             const existing = localStorage.getItem(key);
+             if (!existing || forceNew)
+               localStorage.setItem(
+                 key,
+                 JSON.stringify(defaultRows(els.weekStart.value)),
+               );
+           }
+           function computeSimpleWorked(row) {
+             if (row.pto) return 0;
+             const shift = durationMinutes(row.clockIn, row.clockOut);
+             if (shift == null) return 0;
+             let worked = shift;
+             if (!row.skipLunch) {
+               const lunch = durationMinutes(row.lunchOut, row.lunchIn);
+               if (lunch != null) worked -= lunch;
+             }
+             return worked;
+           }
+           function computeRow(row, idx, rows) {
+             const dailyGoal = parseHHMM(els.dailyGoal.value) ?? 480;
+             const skipGoal = parseHHMM(els.skipGoal.value) ?? 450;
+             const weeklyGoal = parseHHMM(els.weeklyGoal.value) ?? 2400;
+             const defaultLunch = parseHHMM(els.defaultLunch.value) ?? 30;
 
-      els.totalWorked.textContent = formatMinutes(weekWorked);
-      els.totalMissed.textContent = formatMinutes(totalMissed);
-      els.sumWorked.textContent = formatMinutes(weekWorked);
-      els.sumGoal.textContent = formatMinutes(weeklyGoal);
-      els.sumVariance.textContent = formatMinutes(weekVariance);
-      els.sumPercent.textContent = `${percent.toFixed(1)}%`;
-      els.mobileSumWorked.textContent = formatMinutes(weekWorked);
-      els.mobileSumGoal.textContent = formatMinutes(weeklyGoal);
-      els.mobileSumVariance.textContent = formatMinutes(weekVariance);
-      els.mobileSumPercent.textContent = `${percent.toFixed(1)}%`;
-      requestAnimationFrame(handleResponsiveMode);
-    }
+             let target = row.pto ? 0 : row.skipLunch ? skipGoal : dailyGoal;
+             let worked = 0;
+             if (!row.pto) {
+               const shift = durationMinutes(row.clockIn, row.clockOut);
+               if (shift != null) {
+                 worked = shift;
+                 if (!row.skipLunch) {
+                   const lunch = durationMinutes(row.lunchOut, row.lunchIn);
+                   if (lunch != null) worked -= lunch;
+                 }
+               }
+             }
 
-    function saveSettings(){
-      localStorage.setItem(`${STORAGE_PREFIX}_settings`, JSON.stringify({
-        dailyGoal: els.dailyGoal.value,
-        skipGoal: els.skipGoal.value,
-        weeklyGoal: els.weeklyGoal.value,
-        defaultLunch: els.defaultLunch.value,
-        defaultClockIn: els.defaultClockIn.value,
-        weekStart: els.weekStart.value
-      }));
-    }
-    function loadSettings(){
-      const saved = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}_settings`) || "{}");
-      els.weekStart.value = saved.weekStart || todayLocalDateString(getMonday(new Date()));
-      els.dailyGoal.value = saved.dailyGoal || "8:00";
-      els.skipGoal.value = saved.skipGoal || "7:30";
-      els.weeklyGoal.value = saved.weeklyGoal || "40:00";
-      els.defaultLunch.value = saved.defaultLunch || "0:30";
-      els.defaultClockIn.value = saved.defaultClockIn || "06:45";
-      ensureWeekExists();
-    }
-    function loadTheme(){
-      const savedTheme = localStorage.getItem(`${STORAGE_PREFIX}_theme`) || "light";
-      if(savedTheme === "dark"){
-        document.body.classList.add("dark");
-        els.themeToggle.textContent = "☀️ Light";
-      } else {
-        document.body.classList.remove("dark");
-        els.themeToggle.textContent = "🌙 Dark";
-      }
-    }
-    function saveTheme(theme){ localStorage.setItem(`${STORAGE_PREFIX}_theme`, theme); }
+             let lunchToAdd = 0;
+             if (!row.skipLunch && !row.pto) {
+               const enteredLunch = durationMinutes(row.lunchOut, row.lunchIn);
+               lunchToAdd = enteredLunch != null ? enteredLunch : defaultLunch;
+             }
 
-    function handleResponsiveMode(){
-      const wrap = document.querySelector('.desktop-table-wrap');
-      if(!wrap) return;
+             const clockInMin = timeToMinutes(row.clockIn);
+             let dailySuggestedOut = null;
+             if (clockInMin != null && !row.pto)
+               dailySuggestedOut = clockInMin + target + lunchToAdd;
 
-      const table = wrap.querySelector('table');
-      if(!table) return;
+             let fridayNeeded = null;
+             let fridaySuggestedOut = null;
+             if (idx === 4) {
+               const monThuWorked = rows
+                 .slice(0, 4)
+                 .reduce((sum, r) => sum + computeSimpleWorked(r), 0);
+               fridayNeeded = Math.max(0, weeklyGoal - monThuWorked);
+               if (clockInMin != null && !row.pto)
+                 fridaySuggestedOut = clockInMin + fridayNeeded + lunchToAdd;
+             }
 
-      // Add a little buffer so the switch happens before the table feels cramped.
-      const buffer = 140;
-      const needsMobile = table.scrollWidth > wrap.clientWidth;
+             const timeMissed = Math.max(0, target - worked);
+             return {
+               target,
+               worked,
+               timeMissed,
+               dailySuggestedOut,
+               fridayNeeded,
+               fridaySuggestedOut,
+             };
+           }
 
-      document.body.classList.toggle('responsive-mobile', needsMobile);
-    }
+           function renderMobileCard(row, idx, c) {
+             return `
+             <div class="day-card">
+               <div class="day-card-header">
+                 <div class="day-card-title">${row.day}</div>
+                 <div class="day-card-date">${formatDisplayDate(row.date)}</div>
+               </div>
+               <div class="day-grid">
+                 <div class="mobile-field">
+                   <label>Clock In</label>
+                   <input type="time" data-idx="${idx}" data-field="clockIn" value="${row.clockIn || ""}" ${row.pto ? "disabled" : ""}>
+                 </div>
+                 <div class="mobile-field">
+                   <label>Lunch Out</label>
+                   <input type="time" data-idx="${idx}" data-field="lunchOut" value="${row.lunchOut || ""}" ${row.skipLunch || row.pto ? "disabled" : ""}>
+                 </div>
+                 <div class="mobile-field">
+                   <label>Lunch In</label>
+                   <input type="time" data-idx="${idx}" data-field="lunchIn" value="${row.lunchIn || ""}" ${row.skipLunch || row.pto ? "disabled" : ""}>
+                 </div>
+                 <div class="mobile-field">
+                   <label>Actual Clock Out</label>
+                   <input type="time" data-idx="${idx}" data-field="clockOut" value="${row.clockOut || ""}" ${row.pto ? "disabled" : ""}>
+                 </div>
+                 <div class="mobile-field">
+                   <label>Skip Lunch</label>
+                   <div class="mobile-check"><input type="checkbox" data-idx="${idx}" data-field="skipLunch" ${row.skipLunch ? "checked" : ""} ${row.pto ? "disabled" : ""}></div>
+                 </div>
+                 <div class="mobile-field">
+                   <label>PTO</label>
+                   <div class="mobile-check"><input type="checkbox" data-idx="${idx}" data-field="pto" ${row.pto ? "checked" : ""}></div>
+                 </div>
+                 <div class="mobile-field">
+                   <label>Clock Out Time</label>
+                   <div class="mobile-readout">${minutesToClock(c.dailySuggestedOut)}</div>
+                 </div>
+                 <div class="mobile-field">
+                   <label>Time Worked</label>
+                   <div class="mobile-readout ${c.timeMissed === 0 && c.worked > 0 ? "worked-good" : c.worked > 0 ? "worked-bad" : ""}">${formatMinutes(c.worked)}</div>
+                 </div>
+                 <div class="mobile-field">
+                   <label>Time Missed</label>
+                   <div class="mobile-readout ${c.timeMissed > 0 ? "worked-bad" : c.worked > 0 ? "worked-good" : ""}">${formatMissed(c.timeMissed)}</div>
+                 </div>
+                 <div class="mobile-field">
+                   <label>Friday Needed</label>
+                   <div class="mobile-readout ${idx === 4 ? "friday-cell" : ""}">${idx === 4 ? formatMinutes(c.fridayNeeded) : "—"}</div>
+                 </div>
+                 <div class="mobile-field">
+                   <label>Friday Clock Out</label>
+                   <div class="mobile-readout ${idx === 4 ? "friday-cell" : ""}">${idx === 4 ? minutesToClock(c.fridaySuggestedOut) : "—"}</div>
+                 </div>
+               </div>
+             </div>
+           `;
+           }
 
-    document.addEventListener("input", (e) => {
-      const target = e.target;
-      if(target.matches("[data-idx][data-field]")){
-        const state = getState();
-        const idx = Number(target.dataset.idx);
-        const field = target.dataset.field;
-        const row = state.rows[idx];
+           function render() {
+             const state = getState();
+             const rows = updateDatesInRows(state.rows);
+             saveState(rows);
+             els.timeRows.innerHTML = "";
+             els.mobileDays.innerHTML = "";
 
-        if(target.type === "checkbox"){
-          row[field] = target.checked;
-          if(field === "pto" && row.pto){
-            row.clockIn = ""; row.clockOut = ""; row.lunchOut = ""; row.lunchIn = ""; row.skipLunch = false;
-          }
-          if(field === "skipLunch" && row.skipLunch){
-            row.lunchOut = ""; row.lunchIn = "";
-          }
-        } else {
-          row[field] = target.value;
-        }
+             let weekWorked = 0;
+             let totalMissed = 0;
 
-        saveState(state.rows);
-        render();
-      }
+             rows.forEach((row, idx) => {
+               const c = computeRow(row, idx, rows);
+               weekWorked += c.worked;
+               totalMissed += c.timeMissed;
 
-      if(["weekStart","dailyGoal","skipGoal","weeklyGoal","defaultLunch","defaultClockIn"].includes(target.id)){
-        if(target.id === "weekStart"){
-          const state = getState();
-          saveState(updateDatesInRows(state.rows));
-        }
-        saveSettings();
-        render();
-      }
-    });
+               const tr = document.createElement("tr");
+               tr.innerHTML = `
+               <td class="day">${row.day}</td>
+               <td class="date">${formatDisplayDate(row.date)}</td>
+               <td class="input-cell"><input type="time" data-idx="${idx}" data-field="clockIn" value="${row.clockIn || ""}" ${row.pto ? "disabled" : ""}></td>
+               <td class="input-cell"><input type="time" data-idx="${idx}" data-field="lunchOut" value="${row.lunchOut || ""}" ${row.skipLunch || row.pto ? "disabled" : ""}></td>
+               <td class="input-cell"><input type="time" data-idx="${idx}" data-field="lunchIn" value="${row.lunchIn || ""}" ${row.skipLunch || row.pto ? "disabled" : ""}></td>
+               <td class="checkbox-cell"><input type="checkbox" data-idx="${idx}" data-field="skipLunch" ${row.skipLunch ? "checked" : ""} ${row.pto ? "disabled" : ""}></td>
+               <td>${minutesToClock(c.dailySuggestedOut)}</td>
+               <td class="input-cell"><input type="time" data-idx="${idx}" data-field="clockOut" value="${row.clockOut || ""}" ${row.pto ? "disabled" : ""}></td>
+               <td class="${c.timeMissed === 0 && c.worked > 0 ? "worked-good" : c.worked > 0 ? "worked-bad" : ""}">${formatMinutes(c.worked)}</td>
+               <td class="${c.timeMissed > 0 ? "worked-bad" : c.worked > 0 ? "worked-good" : ""}">${formatMissed(c.timeMissed)}</td>
+               <td class="${idx === 4 ? "friday-cell" : ""}">${idx === 4 ? formatMinutes(c.fridayNeeded) : "—"}</td>
+               <td class="${idx === 4 ? "friday-cell" : ""}">${idx === 4 ? minutesToClock(c.fridaySuggestedOut) : "—"}</td>
+               <td class="checkbox-cell"><input type="checkbox" data-idx="${idx}" data-field="pto" ${row.pto ? "checked" : ""}></td>
+             `;
+               els.timeRows.appendChild(tr);
+               els.mobileDays.insertAdjacentHTML(
+                 "beforeend",
+                 renderMobileCard(row, idx, c),
+               );
+             });
 
-    els.setCurrentWeekBtn.addEventListener("click", () => {
-      els.weekStart.value = todayLocalDateString(getMonday(new Date()));
-      ensureWeekExists();
-      saveSettings();
-      render();
-    });
-    els.themeToggle.addEventListener("click", () => {
-      document.body.classList.toggle("dark");
-      const isDark = document.body.classList.contains("dark");
-      els.themeToggle.textContent = isDark ? "☀️ Light" : "🌙 Dark";
-      saveTheme(isDark ? "dark" : "light");
-    });
-    els.resetBtn.addEventListener("click", () => {
-      if(confirm("Reset all entries for this week?")){
-        localStorage.removeItem(getStorageKey(els.weekStart.value));
-        ensureWeekExists(true);
-        render();
-      }
-    });
-    els.exportBtn.addEventListener("click", () => {
-      const payload = getState();
-      payload.exportedAt = new Date().toISOString();
-      const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `timeclock_${els.weekStart.value}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-    els.importFile.addEventListener("change", async (e) => {
-      const file = e.target.files && e.target.files[0];
-      if(!file) return;
-      try{
-        const data = JSON.parse(await file.text());
-        if(!data || !Array.isArray(data.rows) || !data.settings || !data.settings.weekStart) throw new Error("bad");
-        els.weekStart.value = data.settings.weekStart;
-        els.dailyGoal.value = data.settings.dailyGoal || "8:00";
-        els.skipGoal.value = data.settings.skipGoal || "7:30";
-        els.weeklyGoal.value = data.settings.weeklyGoal || "40:00";
-        els.defaultLunch.value = data.settings.defaultLunch || "0:30";
-        els.defaultClockIn.value = data.settings.defaultClockIn || "06:45";
-        localStorage.setItem(getStorageKey(els.weekStart.value), JSON.stringify(updateDatesInRows(data.rows)));
-        saveSettings();
-        render();
-        alert("Week imported.");
-      } catch(err){
-        alert("That file could not be imported.");
-      } finally {
-        e.target.value = "";
-      }
-    });
+             const weeklyGoal = parseHHMM(els.weeklyGoal.value) ?? 2400;
+             const weekVariance = weekWorked - weeklyGoal;
+             const percent = weeklyGoal ? (weekWorked / weeklyGoal) * 100 : 0;
 
-    let resizeTimer;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(handleResponsiveMode, 60);
-    });
+             els.totalWorked.textContent = formatMinutes(weekWorked);
+             els.totalMissed.textContent = formatMinutes(totalMissed);
+             els.sumWorked.textContent = formatMinutes(weekWorked);
+             els.sumGoal.textContent = formatMinutes(weeklyGoal);
+             els.sumVariance.textContent = formatMinutes(weekVariance);
+             els.sumPercent.textContent = `${percent.toFixed(1)}%`;
+             els.mobileSumWorked.textContent = formatMinutes(weekWorked);
+             els.mobileSumGoal.textContent = formatMinutes(weeklyGoal);
+             els.mobileSumVariance.textContent = formatMinutes(weekVariance);
+             els.mobileSumPercent.textContent = `${percent.toFixed(1)}%`;
+             requestAnimationFrame(handleResponsiveMode);
+           }
 
-    loadSettings();
-    loadTheme();
-    render();
-  </script>
-</body>
+           function saveSettings() {
+             localStorage.setItem(
+               `${STORAGE_PREFIX}_settings`,
+               JSON.stringify({
+                 dailyGoal: els.dailyGoal.value,
+                 skipGoal: els.skipGoal.value,
+                 weeklyGoal: els.weeklyGoal.value,
+                 defaultLunch: els.defaultLunch.value,
+                 defaultClockIn: els.defaultClockIn.value,
+                 weekStart: els.weekStart.value,
+               }),
+             );
+           }
+           function loadSettings() {
+             const saved = JSON.parse(
+               localStorage.getItem(`${STORAGE_PREFIX}_settings`) || "{}",
+             );
+             els.weekStart.value =
+               saved.weekStart || todayLocalDateString(getMonday(new Date()));
+             els.dailyGoal.value = saved.dailyGoal || "8:00";
+             els.skipGoal.value = saved.skipGoal || "7:30";
+             els.weeklyGoal.value = saved.weeklyGoal || "40:00";
+             els.defaultLunch.value = saved.defaultLunch || "0:30";
+             els.defaultClockIn.value = saved.defaultClockIn || "06:45";
+             ensureWeekExists();
+           }
+           function loadTheme() {
+             const savedTheme =
+               localStorage.getItem(`${STORAGE_PREFIX}_theme`) || "light";
+             if (savedTheme === "dark") {
+               document.body.classList.add("dark");
+               els.themeToggle.textContent = "☀️ Light";
+             } else {
+               document.body.classList.remove("dark");
+               els.themeToggle.textContent = "🌙 Dark";
+             }
+           }
+           function saveTheme(theme) {
+             localStorage.setItem(`${STORAGE_PREFIX}_theme`, theme);
+           }
+
+           function handleResponsiveMode() {
+             const wrap = document.querySelector(".desktop-table-wrap");
+             if (!wrap) return;
+
+             const table = wrap.querySelector("table");
+             if (!table) return;
+
+             // Add a little buffer so the switch happens before the table feels cramped.
+             const buffer = 140;
+             const needsMobile = table.scrollWidth > wrap.clientWidth;
+
+             document.body.classList.toggle("responsive-mobile", needsMobile);
+           }
+
+           document.addEventListener("input", (e) => {
+             const target = e.target;
+             if (target.matches("[data-idx][data-field]")) {
+               const state = getState();
+               const idx = Number(target.dataset.idx);
+               const field = target.dataset.field;
+               const row = state.rows[idx];
+
+               if (target.type === "checkbox") {
+                 row[field] = target.checked;
+                 if (field === "pto" && row.pto) {
+                   row.clockIn = "";
+                   row.clockOut = "";
+                   row.lunchOut = "";
+                   row.lunchIn = "";
+                   row.skipLunch = false;
+                 }
+                 if (field === "skipLunch" && row.skipLunch) {
+                   row.lunchOut = "";
+                   row.lunchIn = "";
+                 }
+               } else {
+                 row[field] = target.value;
+               }
+
+               saveState(state.rows);
+               render();
+             }
+
+             if (
+               [
+                 "weekStart",
+                 "dailyGoal",
+                 "skipGoal",
+                 "weeklyGoal",
+                 "defaultLunch",
+                 "defaultClockIn",
+               ].includes(target.id)
+             ) {
+               if (target.id === "weekStart") {
+                 const state = getState();
+                 saveState(updateDatesInRows(state.rows));
+               }
+               saveSettings();
+               render();
+             }
+           });
+
+      HEAD
+           els.setCurrentWeekBtn.addEventListener("click", () => {
+             els.weekStart.value = todayLocalDateString(getMonday(new Date()));
+             ensureWeekExists();
+
+           const weeklyGoal = parseHHMM(els.weeklyGoal.value) ?? 2400;
+           const weekVariance = weekWorked - weeklyGoal;
+           const percent = weeklyGoal ? (weekWorked / weeklyGoal * 100) : 0;
+
+           els.totalWorked.textContent = formatMinutes(weekWorked);
+           els.totalMissed.textContent = formatMinutes(totalMissed);
+           els.sumWorked.textContent = formatMinutes(weekWorked);
+           els.sumGoal.textContent = formatMinutes(weeklyGoal);
+           els.sumVariance.textContent = formatMinutes(weekVariance);
+           els.sumPercent.textContent = `${percent.toFixed(1)}%`;
+           els.mobileSumWorked.textContent = formatMinutes(weekWorked);
+           els.mobileSumGoal.textContent = formatMinutes(weeklyGoal);
+           els.mobileSumVariance.textContent = formatMinutes(weekVariance);
+           els.mobileSumPercent.textContent = `${percent.toFixed(1)}%`;
+           requestAnimationFrame(handleResponsiveMode);
+         }
+
+         function saveSettings(){
+           localStorage.setItem(`${STORAGE_PREFIX}_settings`, JSON.stringify({
+             dailyGoal: els.dailyGoal.value,
+             skipGoal: els.skipGoal.value,
+             weeklyGoal: els.weeklyGoal.value,
+             defaultLunch: els.defaultLunch.value,
+             defaultClockIn: els.defaultClockIn.value,
+             weekStart: els.weekStart.value
+           }));
+         }
+         function loadSettings(){
+           const saved = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}_settings`) || "{}");
+           els.weekStart.value = saved.weekStart || todayLocalDateString(getMonday(new Date()));
+           els.dailyGoal.value = saved.dailyGoal || "8:00";
+           els.skipGoal.value = saved.skipGoal || "7:30";
+           els.weeklyGoal.value = saved.weeklyGoal || "40:00";
+           els.defaultLunch.value = saved.defaultLunch || "0:30";
+           els.defaultClockIn.value = saved.defaultClockIn || "06:45";
+           ensureWeekExists();
+         }
+         function loadTheme(){
+           const savedTheme = localStorage.getItem(`${STORAGE_PREFIX}_theme`) || "light";
+           if(savedTheme === "dark"){
+             document.body.classList.add("dark");
+             els.themeToggle.textContent = "☀️ Light";
+           } else {
+             document.body.classList.remove("dark");
+             els.themeToggle.textContent = "🌙 Dark";
+           }
+         }
+         function saveTheme(theme){ localStorage.setItem(`${STORAGE_PREFIX}_theme`, theme); }
+
+         function handleResponsiveMode(){
+           const wrap = document.querySelector('.desktop-table-wrap');
+           if(!wrap) return;
+
+           const table = wrap.querySelector('table');
+           if(!table) return;
+
+           // Add a little buffer so the switch happens before the table feels cramped.
+           const buffer = 140;
+           const needsMobile = table.scrollWidth > wrap.clientWidth;
+
+           document.body.classList.toggle('responsive-mobile', needsMobile);
+         }
+
+         document.addEventListener("input", (e) => {
+           const target = e.target;
+           if(target.matches("[data-idx][data-field]")){
+             const state = getState();
+             const idx = Number(target.dataset.idx);
+             const field = target.dataset.field;
+             const row = state.rows[idx];
+
+             if(target.type === "checkbox"){
+               row[field] = target.checked;
+               if(field === "pto" && row.pto){
+                 row.clockIn = ""; row.clockOut = ""; row.lunchOut = ""; row.lunchIn = ""; row.skipLunch = false;
+               }
+               if(field === "skipLunch" && row.skipLunch){
+                 row.lunchOut = ""; row.lunchIn = "";
+               }
+             } else {
+               row[field] = target.value;
+             }
+
+             saveState(state.rows);
+             render();
+           }
+
+           if(["weekStart","dailyGoal","skipGoal","weeklyGoal","defaultLunch","defaultClockIn"].includes(target.id)){
+             if(target.id === "weekStart"){
+               const state = getState();
+               saveState(updateDatesInRows(state.rows));
+             }
+
+             saveSettings();
+             render();
+           });
+           els.themeToggle.addEventListener("click", () => {
+             document.body.classList.toggle("dark");
+             const isDark = document.body.classList.contains("dark");
+             els.themeToggle.textContent = isDark ? "☀️ Light" : "🌙 Dark";
+             saveTheme(isDark ? "dark" : "light");
+           });
+           els.resetBtn.addEventListener("click", () => {
+             if (confirm("Reset all entries for this week?")) {
+               localStorage.removeItem(getStorageKey(els.weekStart.value));
+               ensureWeekExists(true);
+               render();
+             }
+           });
+           els.exportBtn.addEventListener("click", () => {
+             const payload = getState();
+             payload.exportedAt = new Date().toISOString();
+             const blob = new Blob([JSON.stringify(payload, null, 2)], {
+               type: "application/json",
+             });
+             const url = URL.createObjectURL(blob);
+             const a = document.createElement("a");
+             a.href = url;
+             a.download = `timeclock_${els.weekStart.value}.json`;
+             a.click();
+             URL.revokeObjectURL(url);
+           });
+           els.importFile.addEventListener("change", async (e) => {
+             const file = e.target.files && e.target.files[0];
+             if (!file) return;
+             try {
+               const data = JSON.parse(await file.text());
+               if (
+                 !data ||
+                 !Array.isArray(data.rows) ||
+                 !data.settings ||
+                 !data.settings.weekStart
+               )
+                 throw new Error("bad");
+               els.weekStart.value = data.settings.weekStart;
+               els.dailyGoal.value = data.settings.dailyGoal || "8:00";
+               els.skipGoal.value = data.settings.skipGoal || "7:30";
+               els.weeklyGoal.value = data.settings.weeklyGoal || "40:00";
+               els.defaultLunch.value = data.settings.defaultLunch || "0:30";
+               els.defaultClockIn.value = data.settings.defaultClockIn || "06:45";
+               localStorage.setItem(
+                 getStorageKey(els.weekStart.value),
+                 JSON.stringify(updateDatesInRows(data.rows)),
+               );
+               saveSettings();
+               render();
+               alert("Week imported.");
+             } catch (err) {
+               alert("That file could not be imported.");
+             } finally {
+               e.target.value = "";
+             }
+           });
+
+           let resizeTimer;
+           window.addEventListener("resize", () => {
+             clearTimeout(resizeTimer);
+             resizeTimer = setTimeout(handleResponsiveMode, 60);
+           });
+
+           loadSettings();
+           loadTheme();
+           render();
+    </script>
+  </body>
 </html>
