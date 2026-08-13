@@ -360,7 +360,7 @@
           <input id="defaultClockIn" type="time" value="06:45" />
         </div>
         <button id="setCurrentWeekBtn">Use Current Week</button>
-        <button id="themeToggle">ðŸŒ™ Dark</button>
+        <button id="themeToggle">🌙 Dark</button>
         <button id="exportBtn">Export Week</button>
         <div class="field">
           <label for="importFile">Import Week</label>
@@ -444,10 +444,9 @@
 
       <div class="note">
         <strong>Clock Out Time</strong> is the daily suggested time to hit that
-        dayâ€™s target exactly. <strong>Friday Clock Out</strong> uses the
-        remaining time needed to hit the full weekly goal after
-        Mondayâ€“Thursday. Export saves a JSON backup. Import restores a saved
-        week.
+        day’s target exactly. <strong>Friday Clock Out</strong> uses the
+        remaining time needed to hit the full weekly goal after Monday–Thursday.
+        Export saves a JSON backup. Import restores a saved week.
       </div>
     </div>
 
@@ -518,13 +517,13 @@
         return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : null;
       }
       function formatMinutes(mins) {
-        if (mins == null || Number.isNaN(mins)) return "â€”";
+        if (mins == null || Number.isNaN(mins)) return "—";
         const sign = mins < 0 ? "-" : "";
         const abs = Math.abs(Math.round(mins));
         return `${sign}${Math.floor(abs / 60)}:${pad(abs % 60)}`;
       }
       function formatMissed(mins) {
-        if (mins == null || Number.isNaN(mins)) return "â€”";
+        if (mins == null || Number.isNaN(mins)) return "—";
         return mins <= 0 ? "0:00" : formatMinutes(mins);
       }
       function timeToMinutes(t) {
@@ -538,7 +537,7 @@
         return s == null || e == null ? null : e - s;
       }
       function minutesToClock(minutes) {
-        if (minutes == null) return "â€”";
+        if (minutes == null) return "—";
         const mins = ((minutes % 1440) + 1440) % 1440;
         const h = Math.floor(mins / 60),
           m = mins % 60;
@@ -712,11 +711,11 @@
                  </div>
                  <div class="mobile-field">
                    <label>Friday Needed</label>
-                   <div class="mobile-readout ${idx === 4 ? "friday-cell" : ""}">${idx === 4 ? formatMinutes(c.fridayNeeded) : "â€”"}</div>
+                   <div class="mobile-readout ${idx === 4 ? "friday-cell" : ""}">${idx === 4 ? formatMinutes(c.fridayNeeded) : "—"}</div>
                  </div>
                  <div class="mobile-field">
                    <label>Friday Clock Out</label>
-                   <div class="mobile-readout ${idx === 4 ? "friday-cell" : ""}">${idx === 4 ? minutesToClock(c.fridaySuggestedOut) : "â€”"}</div>
+                   <div class="mobile-readout ${idx === 4 ? "friday-cell" : ""}">${idx === 4 ? minutesToClock(c.fridaySuggestedOut) : "—"}</div>
                  </div>
                </div>
              </div>
@@ -750,8 +749,8 @@
                <td class="input-cell"><input type="time" data-idx="${idx}" data-field="clockOut" value="${row.clockOut || ""}" ${row.pto ? "disabled" : ""}></td>
                <td class="${c.timeMissed === 0 && c.worked > 0 ? "worked-good" : c.worked > 0 ? "worked-bad" : ""}">${formatMinutes(c.worked)}</td>
                <td class="${c.timeMissed > 0 ? "worked-bad" : c.worked > 0 ? "worked-good" : ""}">${formatMissed(c.timeMissed)}</td>
-               <td class="${idx === 4 ? "friday-cell" : ""}">${idx === 4 ? formatMinutes(c.fridayNeeded) : "â€”"}</td>
-               <td class="${idx === 4 ? "friday-cell" : ""}">${idx === 4 ? minutesToClock(c.fridaySuggestedOut) : "â€”"}</td>
+               <td class="${idx === 4 ? "friday-cell" : ""}">${idx === 4 ? formatMinutes(c.fridayNeeded) : "—"}</td>
+               <td class="${idx === 4 ? "friday-cell" : ""}">${idx === 4 ? minutesToClock(c.fridaySuggestedOut) : "—"}</td>
                <td class="checkbox-cell"><input type="checkbox" data-idx="${idx}" data-field="pto" ${row.pto ? "checked" : ""}></td>
              `;
           els.timeRows.appendChild(tr);
@@ -809,10 +808,10 @@
           localStorage.getItem(`${STORAGE_PREFIX}_theme`) || "light";
         if (savedTheme === "dark") {
           document.body.classList.add("dark");
-          els.themeToggle.textContent = "â˜€ï¸ Light";
+          els.themeToggle.textContent = "☀️ Light";
         } else {
           document.body.classList.remove("dark");
-          els.themeToggle.textContent = "ðŸŒ™ Dark";
+          els.themeToggle.textContent = "🌙 Dark";
         }
       }
       function saveTheme(theme) {
@@ -891,7 +890,7 @@
       els.themeToggle.addEventListener("click", () => {
         document.body.classList.toggle("dark");
         const isDark = document.body.classList.contains("dark");
-        els.themeToggle.textContent = isDark ? "â˜€ï¸ Light" : "ðŸŒ™ Dark";
+        els.themeToggle.textContent = isDark ? "☀️ Light" : "🌙 Dark";
         saveTheme(isDark ? "dark" : "light");
       });
 
